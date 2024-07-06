@@ -1,4 +1,5 @@
-import pygame, sys
+import pygame
+import sys
 from maze import Maze
 from player import Player
 from game import Game
@@ -7,7 +8,7 @@ from clock import Clock
 pygame.init()
 pygame.font.init()
 
-class Main():
+class Main:
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.SysFont("impact", 30)
@@ -22,7 +23,6 @@ class Main():
         self.screen.blit(instructions1, (600, 300))
         self.screen.blit(instructions2, (600, 350))
 
-    # draws all configs; maze, players, instructions, and time
     def _draw(self, maze, tile, players, game, clock):
         # draw maze
         [cell.draw(self.screen, tile) for cell in maze.grid_cells]
@@ -46,13 +46,14 @@ class Main():
         
         pygame.display.flip()
 
-    # main game loop
     def main(self, frame_size, tile):
         cols, rows = frame_size[0] // tile, frame_size[-1] // tile
         maze = Maze(cols, rows)
         game = Game(maze.grid_cells[-1], tile)
-        player1 = Player(tile // 3, tile // 3, (250, 120, 60), {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN})
-        player2 = Player(tile // 3, tile // 3, (60, 120, 250), {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN})
+        player1 = Player(tile // 3, tile // 3)
+        player2 = Player(tile // 3, tile // 3)
+        player1.controls = {'left': pygame.K_LEFT, 'right':pygame.K_RIGHT,'up':pygame.K_UP,'down':pygame.K_DOWN}
+        player2.controls = {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s}
         players = [player1, player2]  # Store both players in a list
         clock = Clock()
 
@@ -93,25 +94,23 @@ class Main():
                                 player.down_pressed = False
                             player.check_move(tile, maze.grid_cells, maze.thickness)
 
-            if any(game.is_game_over(players)):
+            if any(game.is_game_over(player) for player in players):
                 self.game_over = True
                 for player in players:
                     player.left_pressed = False
                     player.right_pressed = False
                     player.up_pressed = False
                     player.down_pressed = False
-
             self._draw(maze, tile, players, game, clock)
             self.FPS.tick(60)
 
 
 if __name__ == "__main__":
-    window_size = (602, 602)
-    screen = (window_size[0] + 150, window_size[-1])
-    tile_size = 30
-    screen = pygame.display.set_mode(screen)
-    pygame.display.set_caption("Maze")
+	window_size = (602, 602)
+	screen = (window_size[0] + 150, window_size[-1])
+	tile_size = 30
+	screen = pygame.display.set_mode(screen)
+	pygame.display.set_caption("Maze")
 
-    game = Main(screen)
-    game.main(window_size, tile_size)
-	player2.controls = {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN}
+	game = Main(screen)
+	game.main(window_size, tile_size)
