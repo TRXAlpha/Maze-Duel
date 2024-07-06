@@ -19,7 +19,7 @@ class Main:
 
     def instructions(self):
         instructions1 = self.font.render('Player 1: Use Arrow Keys to Move', True, self.message_color)
-        instructions2 = self.font.render('Player 2: Use WASD Keys to Move', True, self.message_color)
+        instructions2 = self.font.render('Player 2: Use IJKL Keys to Move', True, self.message_color)
         self.screen.blit(instructions1, (600, 300))
         self.screen.blit(instructions2, (600, 350))
 
@@ -52,8 +52,8 @@ class Main:
         game = Game(maze.grid_cells[-1], tile)
         player1 = Player(tile // 3, tile // 3)
         player2 = Player(tile // 3, tile // 3)
-        player1.controls = {'left': pygame.K_LEFT, 'right':pygame.K_RIGHT,'up':pygame.K_UP,'down':pygame.K_DOWN}
-        player2.controls = {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s}
+        player1.controls = {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN}
+        player2.controls = {'left': pygame.K_j, 'right': pygame.K_l, 'up': pygame.K_i, 'down': pygame.K_k}
         players = [player1, player2]  # Store both players in a list
         clock = Clock()
 
@@ -101,16 +101,16 @@ class Main:
                     player.right_pressed = False
                     player.up_pressed = False
                     player.down_pressed = False
+
             self._draw(maze, tile, players, game, clock)
             self.FPS.tick(60)
 
-
 if __name__ == "__main__":
-	window_size = (602, 602)
-	screen = (window_size[0] + 150, window_size[-1])
-	tile_size = 30
-	screen = pygame.display.set_mode(screen)
-	pygame.display.set_caption("Maze")
+    window_size = (602, 602)
+    screen_size = (window_size[0] + 150, window_size[-1])
+    tile_size = 30
+    screen = pygame.display.set_mode(screen_size)
+    pygame.display.set_caption("Maze")
 
-	game = Main(screen)
-	game.main(window_size, tile_size)
+    game = Main(screen)
+    game.main(window_size, tile_size)
