@@ -1,3 +1,4 @@
+# main.py
 import pygame
 import sys
 from maze import Maze
@@ -19,23 +20,18 @@ class Main:
 
     def instructions(self):
         instructions1 = self.font.render('Player 1: Use Arrow Keys to Move', True, self.message_color)
-        instructions2 = self.font.render('Player 2: Use IJKL Keys to Move', True, self.message_color)
+        instructions2 = self.font.render('Player 2: Use WASD Keys to Move', True, self.message_color)
         self.screen.blit(instructions1, (600, 300))
         self.screen.blit(instructions2, (600, 350))
 
     def _draw(self, maze, tile, players, game, clock):
-        # draw maze
         [cell.draw(self.screen, tile) for cell in maze.grid_cells]
-
-        # add a goal point to reach
         game.add_goal_point(self.screen)
 
-        # draw every player movement
         for player in players:
             player.draw(self.screen)
-            player.update()
+            player.update(tile, maze.grid_cells, maze.thickness)
 
-        # instructions, clock, winning message
         self.instructions()
         if self.game_over:
             clock.stop_timer()
@@ -53,8 +49,8 @@ class Main:
         player1 = Player(tile // 3, tile // 3)
         player2 = Player(tile // 3, tile // 3)
         player1.controls = {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN}
-        player2.controls = {'left': pygame.K_j, 'right': pygame.K_l, 'up': pygame.K_i, 'down': pygame.K_k}
-        players = [player1, player2]  # Store both players in a list
+        player2.controls = {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s}
+        players = [player1, player2]
         clock = Clock()
 
         maze.generate_maze()
@@ -68,7 +64,6 @@ class Main:
                     pygame.quit()
                     sys.exit()
 
-                # Handle input for both players
                 for player in players:
                     if event.type == pygame.KEYDOWN:
                         if not self.game_over:
@@ -94,7 +89,7 @@ class Main:
                                 player.down_pressed = False
                             player.check_move(tile, maze.grid_cells, maze.thickness)
 
-            if any(game.is_game_over(player) for player in players):
+            if game.is_game_over(players):
                 self.game_over = True
                 for player in players:
                     player.left_pressed = False
@@ -107,9 +102,9 @@ class Main:
 
 if __name__ == "__main__":
     window_size = (602, 602)
-    screen_size = (window_size[0] + 150, window_size[-1])
+    screen = (window_size[0] + 150, window_size[-1])
     tile_size = 30
-    screen = pygame.display.set_mode(screen_size)
+    screen = pygame.display.set_mode(screen)
     pygame.display.set_caption("Maze")
 
     game = Main(screen)
