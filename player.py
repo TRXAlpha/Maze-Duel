@@ -1,3 +1,4 @@
+# player.py
 import pygame
 
 class Player:
@@ -14,23 +15,15 @@ class Player:
         self.up_pressed = False
         self.down_pressed = False
         self.speed = 4
-        self.controls = {}  # Add this line
 
-    # get current cell position of the player
     def get_current_cell(self, x, y, grid_cells):
         for cell in grid_cells:
             if cell.x == x and cell.y == y:
                 return cell
-        return None  # Ensure to return None if not found
 
-    # stops player to pass through walls
     def check_move(self, tile, grid_cells, thickness):
         current_cell_x, current_cell_y = self.x // tile, self.y // tile
         current_cell = self.get_current_cell(current_cell_x, current_cell_y, grid_cells)
-        if current_cell is None:
-            print(f"Warning: No cell found at ({current_cell_x}, {current_cell_y})")
-            return  # Exit the method if no cell is found
-        
         current_cell_abs_x, current_cell_abs_y = current_cell_x * tile, current_cell_y * tile
         if self.left_pressed:
             if current_cell.walls['left']:
@@ -49,12 +42,10 @@ class Player:
                 if self.y >= current_cell_abs_y + tile - (self.player_size + thickness):
                     self.down_pressed = False
 
-    # drawing player to the screen
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
 
-    # updates player position while moving
-    def update(self):
+    def update(self, tile, grid_cells, thickness):
         self.velX = 0
         self.velY = 0
         if self.left_pressed and not self.right_pressed:
@@ -68,5 +59,7 @@ class Player:
 
         self.x += self.velX
         self.y += self.velY
+
+        self.check_move(tile, grid_cells, thickness)
 
         self.rect = pygame.Rect(int(self.x), int(self.y), self.player_size, self.player_size)
