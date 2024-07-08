@@ -1,37 +1,74 @@
-import pygame
-import sys
 from maze import Maze
 from player import Player
 from game import Game
 from clock import Clock
 
+
 pygame.init()
 pygame.font.init()
+
+class Star:
+    def __init__(self, screen_width, screen_height):
+        self.x = random.randint(0, screen_width)
+        self.y = random.randint(0, screen_height)
+        self.speed = random.uniform(0.1, 0.5)
+        self.size = random.randint(1, 2)
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+
+    def move(self):
+        self.y += self.speed
+        if self.y > self.screen_height:
+            self.y = 0
+            self.x = random.randint(0, self.screen_width)
+
+    def draw(self, screen):
+        faded_color = (255, 255, 255, random.randint(50, 150))
+        star_surface = pygame.Surface((self.size, self.size), pygame.SRCALPHA)
+        pygame.draw.circle(star_surface, faded_color, (self.size // 2, self.size // 2), self.size)
+        screen.blit(star_surface, (self.x, self.y))
 
 class MainMenu:
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.SysFont("impact", 50)
-        self.buttons = {
-            "1v1 Local": (450, 300),
-            "Multiplayer": (450, 400),
-            "Exit the Game": (450, 500)
-        }
+        self.title_font = pygame.font.SysFont("impact", 100)
+        self.buttons = [
+            {"text": "1v1 Local", "pos": (0, 300)},
+            {"text": "Multiplayer", "pos": (0, 400)},
+            {"text": "Exit the Game", "pos": (0, 500)}
+        ]
         self.running = True
+        self.stars = [Star(screen.get_width(), screen.get_height()) for _ in range(100)]
+
+    def draw_stars(self):
+        for star in self.stars:
+            star.move()
+            star.draw(self.screen)
 
     def draw(self):
         self.screen.fill((0, 0, 0))
-        for text, pos in self.buttons.items():
+        self.draw_stars()
+        title = self.title_font.render("MAZE DUEL", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(self.screen.get_width() // 2, 100))
+        self.screen.blit(title, title_rect)
+        
+        for button in self.buttons:
+            text = button["text"]
+            pos = button["pos"]
             btn = self.font.render(text, True, (255, 255, 255))
-            self.screen.blit(btn, pos)
+            btn_rect = btn.get_rect(center=(self.screen.get_width() // 2, pos[1]))
+            self.screen.blit(btn, btn_rect)
+            button["rect"] = btn_rect  # Save the rect for collision detection
+            
         pygame.display.flip()
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
-            for text, pos in self.buttons.items():
-                btn_rect = pygame.Rect(pos, self.font.size(text))
-                if btn_rect.collidepoint(mouse_pos):
+            for button in self.buttons:
+                if button["rect"].collidepoint(mouse_pos):
+                    text = button["text"]
                     if text == "1v1 Local":
                         return "1v1 Local"
                     elif text == "Multiplayer":
@@ -180,4 +217,3 @@ if __name__ == "__main__":
     elif action == "Exit the Game":
         pygame.quit()
         sys.exit()
-``
