@@ -45,7 +45,8 @@ class Main:
     def main(self, frame_size, tile):
         cols, rows = frame_size[0] // tile, frame_size[-1] // tile
         maze = Maze(cols, rows)
-        game = Game(maze.grid_cells[-1], tile)
+        maze.generate_maze()
+        game = Game(maze.grid_cells[-1], tile)  # Ensure the goal cell is the last cell in the maze
         player1 = Player(tile // 3, tile // 3)
         player2 = Player(tile // 3, tile // 3)
         player1.controls = {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN}
@@ -53,7 +54,6 @@ class Main:
         players = [player1, player2]
         clock = Clock()
 
-        maze.generate_maze()
         clock.start_timer()
         while self.running:
             self.screen.fill("gray")
