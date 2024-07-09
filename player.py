@@ -1,8 +1,8 @@
-import random
+# player.py
 import pygame
 
 class Player:
-    def __init__(self, x, y, is_bot=False):
+    def __init__(self, x, y):
         self.x = int(x)
         self.y = int(y)
         self.player_size = 10
@@ -15,20 +15,11 @@ class Player:
         self.up_pressed = False
         self.down_pressed = False
         self.speed = 4
-        self.is_bot = is_bot
 
-    def move_bot(self, tile, grid_cells):
-        if self.is_bot:
-            direction = random.choice(['left', 'right', 'up', 'down'])
-            if direction == 'left':
-                self.left_pressed = True
-            elif direction == 'right':
-                self.right_pressed = True
-            elif direction == 'up':
-                self.up_pressed = True
-            elif direction == 'down':
-                self.down_pressed = True
-            self.check_move(tile, grid_cells, 5)  # Adjust thickness as needed
+    def get_current_cell(self, x, y, grid_cells):
+        for cell in grid_cells:
+            if cell.x == x and cell.y == y:
+                return cell
 
     def check_move(self, tile, grid_cells, thickness):
         current_cell_x, current_cell_y = self.x // tile, self.y // tile
