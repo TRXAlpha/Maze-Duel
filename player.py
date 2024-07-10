@@ -2,12 +2,12 @@
 import pygame
 
 class Player:
-    def __init__(self, x, y):
+    def __init__(self, x, y, is_bot=False, difficulty='easy'):
         self.x = int(x)
         self.y = int(y)
         self.player_size = 10
         self.rect = pygame.Rect(self.x, self.y, self.player_size, self.player_size)
-        self.color = (250, 120, 60)
+        self.color = (250, 120, 60) if not is_bot else (60, 120, 250)
         self.velX = 0
         self.velY = 0
         self.left_pressed = False
@@ -15,6 +15,8 @@ class Player:
         self.up_pressed = False
         self.down_pressed = False
         self.speed = 4
+        self.is_bot = is_bot
+        self.difficulty = difficulty
 
     def get_current_cell(self, x, y, grid_cells):
         for cell in grid_cells:
@@ -63,3 +65,26 @@ class Player:
         self.check_move(tile, grid_cells, thickness)
 
         self.rect = pygame.Rect(int(self.x), int(self.y), self.player_size, self.player_size)
+
+    def bot_move(self, goal, grid_cells, tile):
+        if self.is_bot:
+            goal_x, goal_y = goal.x, goal.y
+            if self.x < goal_x:
+                self.velX = self.speed
+            elif self.x > goal_x:
+                self.velX = -self.speed
+            else:
+                self.velX = 0
+
+            if self.y < goal_y:
+                self.velY = self.speed
+            elif self.y > goal_y:
+                self.velY = -self.speed
+            else:
+                self.velY = 0
+
+            self.x += self.velX
+            self.y += self.velY
+
+            self.rect = pygame.Rect(int(self.x), int(self.y), self.player_size, self.player_size)
+            self.check_move(tile, grid_cells, 4)
