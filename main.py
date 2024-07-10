@@ -37,7 +37,7 @@ class MainMenu:
         self.title_font = pygame.font.SysFont("impact", 100)
         self.buttons = [
             {"text": "1v1 Local", "pos": (0, 300)},
-            {"text": "Multiplayer", "pos": (0, 400)},
+            {"text": "vs Bot", "pos": (0, 400)},
             {"text": "Exit the Game", "pos": (0, 500)}
         ]
         self.running = True
@@ -73,8 +73,8 @@ class MainMenu:
                     text = button["text"]
                     if text == "1v1 Local":
                         return "1v1 Local"
-                    elif text == "Multiplayer":
-                        return "Multiplayer"
+                    elif text == "vs Bot":
+                        return "vs Bot"
                     elif text == "Exit the Game":
                         pygame.quit()
                         sys.exit()
@@ -100,11 +100,12 @@ class Main:
         self.game_over = False
         self.FPS = pygame.time.Clock()
 
-    def instructions(self):
+    def instructions(self, vs_bot=False):
         instructions1 = self.font.render('Player 1: Use WASD Keys to Move', True, self.message_color)
-        instructions2 = self.font.render('Player 2: Use IJKL Keys to Move', True, self.message_color)
         self.screen.blit(instructions1, (810, 100))
-        self.screen.blit(instructions2, (810, 150))
+        if not vs_bot:
+            instructions2 = self.font.render('Player 2: Use IJKL Keys to Move', True, self.message_color)
+            self.screen.blit(instructions2, (810, 150))
 
     def _draw(self, maze, tile, players, game, clock):
         maze_area = pygame.Rect(0, 0, 800, 800)
@@ -123,10 +124,13 @@ class Main:
         # Draw every player movement
         for player in players:
             player.draw(self.screen)
-            player.update(tile, maze.grid_cells, maze.thickness)
+            if player.is_bot:
+                player.bot_move(game.goal_cell, maze.grid_cells, tile)
+            else:
+                player.update(tile, maze.grid_cells, maze.thickness)
 
         # Instructions, clock, winning message
-        self.instructions()
+        self.instructions(players[1].is_bot)
         if self.game_over:
             clock.stop_timer()
             self.screen.blit(game.message(), (810, 220))
@@ -136,19 +140,16 @@ class Main:
         
         pygame.display.flip()
 
-    def main(self, frame_size, tile, bot_difficulty=None):
+    def main(self, frame_size, tile, vs_bot=False, bot_difficulty='easy'):
         cols, rows = frame_size[0] // tile, frame_size[-1] // tile
         maze = Maze(cols, rows)
         maze.generate_maze()
         game = Game(maze.grid_cells[-1], tile)
         player1 = Player(tile // 3, tile // 3)
-        player2 = Player(tile // 3, tile // 3)
+        player2 = Player(tile // 3, tile // 3, is_bot=vs_bot, difficulty=bot_difficulty)
         player1.controls = {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s}
-        if bot_difficulty:
-            player2.is_bot = True
-            player2.bot_difficulty = bot_difficulty
-        else:
-            player2.controls = {'left': pygame.K_j, 'right': pygame.K_l, 'up': pygame.K_i, 'down': pygame.K_k}
+        player2.controls = {'left': pygame.K_j, 'right': pygame.K_l, 'up': pygame.K_i, 'down': pygame.K_k}
+
         players = [player1, player2]
         clock = Clock()
 
@@ -175,7 +176,7 @@ class Main:
                                 if event.key == player.controls['down']:
                                     player.down_pressed = True
                                 player.check_move(tile, maze.grid_cells, maze.thickness)
-                
+            
                         if event.type == pygame.KEYUP:
                             if not self.game_over:
                                 if event.key == player.controls['left']:
@@ -199,16 +200,19 @@ class Main:
             self._draw(maze, tile, players, game, clock)
             self.FPS.tick(60)
 
-def show_instructions(screen):
+def show_instructions(screen, vs_bot=False):
     font = pygame.font.SysFont("impact", 50)
     screen.fill((0, 0, 0))
     MainMenu(screen).draw_stars()
     
     instructions = [
         "Player 1 (Blue): Use WASD for movement.",
-        "Player 2 (Red): Use IJKL for movement.",
-        "First one to reach the exit wins!"
     ]
+    
+    if not vs_bot:
+        instructions.append("Player 2 (Red): Use IJKL for movement.")
+        
+    instructions.append("First one to reach the exit wins!")
     
     y_offset = 200
     for line in instructions:
@@ -230,76 +234,23 @@ def countdown(screen):
         screen.blit(text, rect)
         pygame.display.flip()
         pygame.time.wait(1000)
-    screen.fill((0, 0, 0))
-    MainMenu(screen).draw_stars()
-    text = font.render("GO!", True, (255, 255, 255))
-    rect = text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
-    screen.blit(text, rect)
-    pygame.display.flip()
-    pygame.time.wait(1000)
+
+def main():
+    screen = pygame.display.set_mode((1000, 800))
+    pygame.display.set_caption("Maze Duel")
+    main_menu = MainMenu(screen)
+    game = Main(screen)
+
+    while True:
+        action = main_menu.main_loop()
+        if action == "1v1 Local":
+            show_instructions(screen)
+            countdown(screen)
+            game.main((800, 800), 40)
+        elif action == "vs Bot":
+            show_instructions(screen, vs_bot=True)
+            countdown(screen)
+            game.main((800, 800), 40, vs_bot=True)
 
 if __name__ == "__main__":
-    window_size = (800, 800)
-    screen_size = (1000, 800)  # Wider screen to accommodate the information section
-    tile_size = 30
-    screen = pygame.display.set_mode(screen_size)
-    pygame.display.set_caption("Maze")
-
-    menu = MainMenu(screen)
-    action = menu.main_loop()
-
-    if action == "1v1 Local":
-        # Show options for vs Person or vs Bot
-        font = pygame.font.SysFont("impact", 50)
-        options = ["vs Person", "Easy Bot", "Medium Bot", "Hard Bot"]
-        running = True
-        while running:
-            screen.fill((0, 0, 0))
-            MainMenu(screen).draw_stars()
-            y_offset = 300
-            for option in options:
-                text = font.render(option, True, (255, 255, 255))
-                rect = text.get_rect(center=(screen.get_width() // 2, y_offset))
-                screen.blit(text, rect)
-                pygame.display.flip()
-                y_offset += 100
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mouse_pos = pygame.mouse.get_pos()
-                    if 250 < mouse_pos[1] < 350:
-                        show_instructions(screen)
-                        countdown(screen)
-                        game = Main(screen)
-                        game.main(window_size, tile_size)
-                    elif 350 < mouse_pos[1] < 450:
-                        show_instructions(screen)
-                        countdown(screen)
-                        game = Main(screen)
-                        game.main(window_size, tile_size, bot_difficulty="easy")
-                    elif 450 < mouse_pos[1] < 550:
-                        show_instructions(screen)
-                        countdown(screen)
-                        game = Main(screen)
-                        game.main(window_size, tile_size, bot_difficulty="medium")
-                    elif 550 < mouse_pos[1] < 650:
-                        show_instructions(screen)
-                        countdown(screen)
-                        game = Main(screen)
-                        game.main(window_size, tile_size, bot_difficulty="hard")
-
-    elif action == "Multiplayer":
-        screen.fill((0, 0, 0))
-        font = pygame.font.SysFont("impact", 50)
-        text = font.render("To be continued", True, (255, 255, 255))
-        screen.blit(text, (450, 300))
-        pygame.display.flip()
-        pygame.time.wait(2000)
-        pygame.quit()
-        sys.exit()
-    elif action == "Exit the Game":
-        pygame.quit()
-        sys.exit()
+    main()
