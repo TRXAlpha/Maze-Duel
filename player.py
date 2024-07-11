@@ -133,7 +133,6 @@ class Player:
 
         return True
 
-
     def get_neighbors(self, x, y, grid_cells):
         neighbors = []
         if x < len(grid_cells) - 1 and not grid_cells[x + 1][y].walls['left']:
