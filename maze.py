@@ -10,18 +10,18 @@ class Cell:
         self.size = size
         self.walls = {'top': True, 'right': True, 'bottom': True, 'left': True}
         self.visited = False
+        self.thickness = 2
 
-    def draw(self, screen):
-        x = self.x * self.size
-        y = self.y * self.size
+    def draw(self, sc, tile, offset_y=0):
+        x, y = self.x * tile, (self.y * tile) + offset_y
         if self.walls['top']:
-            pygame.draw.line(screen, (255, 255, 255), (x, y), (x + self.size, y), 2)
+            pygame.draw.line(sc, pygame.Color('darkgreen'), (x, y), (x + tile, y), self.thickness) # thickness of the wall
         if self.walls['right']:
-            pygame.draw.line(screen, (255, 255, 255), (x + self.size, y), (x + self.size, y + self.size), 2)
+            pygame.draw.line(sc, pygame.Color('darkgreen'), (x + tile, y), (x + tile, y + tile), self.thickness)
         if self.walls['bottom']:
-            pygame.draw.line(screen, (255, 255, 255), (x + self.size, y + self.size), (x, y + self.size), 2)
+            pygame.draw.line(sc, pygame.Color('darkgreen'), (x + tile, y + tile), (x, y + tile), self.thickness)
         if self.walls['left']:
-            pygame.draw.line(screen, (255, 255, 255), (x, y + self.size), (x, y), 2)
+            pygame.draw.line(sc, pygame.Color('darkgreen'), (x, y + tile), (x, y), self.thickness)
 
     def remove_wall(self, next_cell):
         dx = self.x - next_cell.x
@@ -48,10 +48,10 @@ class Maze:
         self.stack = []
         self.current = self.grid[0][0]
 
-    def draw(self, screen):
+    def draw(self, screen, offset_y=0):
         for col in range(self.cols):
             for row in range(self.rows):
-                self.grid[col][row].draw(screen)
+                self.grid[col][row].draw(screen, offset_y) # draw grid cell walls
 
     def generate_maze(self):
         self.current.visited = True
