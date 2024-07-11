@@ -7,4 +7,5 @@ Added difficulty selector for the vs bot
 
 You can now play with a friend on the same keyboard!
 
-Multiplayer is still in development
+
+Decided not going to use the number guesser
