@@ -1,90 +1,124 @@
-# player.py
 import pygame
+import random
 
 class Player:
-    def __init__(self, x, y, is_bot=False, difficulty='easy'):
-        self.x = int(x)
-        self.y = int(y)
-        self.player_size = 10
-        self.rect = pygame.Rect(self.x, self.y, self.player_size, self.player_size)
-        self.color = (250, 120, 60) if not is_bot else (60, 120, 250)
-        self.velX = 0
-        self.velY = 0
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
-        self.speed = 4
+    def __init__(self, width, height, is_bot=False, difficulty='easy'):
+        self.rect = pygame.Rect(0, 0, width, height)
+        self.color = (0, 0, 255) if not is_bot else (255, 0, 0)
+        self.speed = 2
         self.is_bot = is_bot
         self.difficulty = difficulty
-
-    def get_current_cell(self, x, y, grid_cells):
-        for cell in grid_cells:
-            if cell.x == x and cell.y == y:
-                return cell
-
-    def check_move(self, tile, grid_cells, thickness):
-        current_cell_x, current_cell_y = self.x // tile, self.y // tile
-        current_cell = self.get_current_cell(current_cell_x, current_cell_y, grid_cells)
-        current_cell_abs_x, current_cell_abs_y = current_cell_x * tile, current_cell_y * tile
-        if self.left_pressed:
-            if current_cell.walls['left']:
-                if self.x <= current_cell_abs_x + thickness:
-                    self.left_pressed = False
-        if self.right_pressed:
-            if current_cell.walls['right']:
-                if self.x >= current_cell_abs_x + tile - (self.player_size + thickness):
-                    self.right_pressed = False
-        if self.up_pressed:
-            if current_cell.walls['top']:
-                if self.y <= current_cell_abs_y + thickness:
-                    self.up_pressed = False
-        if self.down_pressed:
-            if current_cell.walls['bottom']:
-                if self.y >= current_cell_abs_y + tile - (self.player_size + thickness):
-                    self.down_pressed = False
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
 
-    def update(self, tile, grid_cells, thickness):
-        self.velX = 0
-        self.velY = 0
-        if self.left_pressed and not self.right_pressed:
-            self.velX = -self.speed
-        if self.right_pressed and not self.left_pressed:
-            self.velX = self.speed
-        if self.up_pressed and not self.down_pressed:
-            self.velY = -self.speed
-        if self.down_pressed and not self.up_pressed:
-            self.velY = self.speed
+    def bot_move(self, goal_cell, grid_cells, tile):
+        if self.difficulty == 'easy':
+            self.easy_bot_move(grid_cells, tile)
+        elif self.difficulty == 'medium':
+            self.medium_bot_move(goal_cell, grid_cells, tile)
+        elif self.difficulty == 'hard':
+            self.hard_bot_move(goal_cell, grid_cells, tile)
 
-        self.x += self.velX
-        self.y += self.velY
+    def easy_bot_move(self, grid_cells, tile):
+        directions = [(self.speed, 0), (-self.speed, 0), (0, self.speed), (0, -self.speed)]
+        random.shuffle(directions)
+        
+        for dx, dy in directions:
+            new_x = self.rect.x + dx
+            new_y = self.rect.y + dy
+            
+            if self.can_move(new_x, new_y, grid_cells, tile):
+                self.rect.x = new_x
+                self.rect.y = new_y
+                break
 
-        self.check_move(tile, grid_cells, thickness)
+    def medium_bot_move(self, goal_cell, grid_cells, tile):
+        directions = []
+        if self.rect.x < goal_cell.rect.x:
+            directions.append((self.speed, 0))
+        elif self.rect.x > goal_cell.rect.x:
+            directions.append((-self.speed, 0))
+        if self.rect.y < goal_cell.rect.y:
+            directions.append((0, self.speed))
+        elif self.rect.y > goal_cell.rect.y:
+            directions.append((0, -self.speed))
 
-        self.rect = pygame.Rect(int(self.x), int(self.y), self.player_size, self.player_size)
+        random.shuffle(directions)
 
-    def bot_move(self, goal, grid_cells, tile):
-        if self.is_bot:
-            goal_x, goal_y = goal.x, goal.y
-            if self.x < goal_x:
-                self.velX = self.speed
-            elif self.x > goal_x:
-                self.velX = -self.speed
-            else:
-                self.velX = 0
+        for dx, dy in directions:
+            new_x = self.rect.x + dx
+            new_y = self.rect.y + dy
 
-            if self.y < goal_y:
-                self.velY = self.speed
-            elif self.y > goal_y:
-                self.velY = -self.speed
-            else:
-                self.velY = 0
+            if self.can_move(new_x, new_y, grid_cells, tile):
+                self.rect.x = new_x
+                self.rect.y = new_y
+                break
 
-            self.x += self.velX
-            self.y += self.velY
+    def hard_bot_move(self, goal_cell, grid_cells, tile):
+        start = (self.rect.x // tile, self.rect.y // tile)
+        end = (goal_cell.rect.x // tile, goal_cell.rect.y // tile)
+        frontier = [(start, 0)]
+        came_from = {start: None}
+        cost_so_far = {start: 0}
 
-            self.rect = pygame.Rect(int(self.x), int(self.y), self.player_size, self.player_size)
-            self.check_move(tile, grid_cells, 4)
+        while frontier:
+            current = frontier.pop(0)[0]
+            if current == end:
+                break
+
+            for next in self.get_neighbors(current, grid_cells):
+                new_cost = cost_so_far[current] + 1
+                if next not in cost_so_far or new_cost < cost_so_far[next]:
+                    cost_so_far[next] = new_cost
+                    priority = new_cost + self.heuristic(end, next)
+                    frontier.append((next, priority))
+                    frontier.sort(key=lambda x: x[1])
+                    came_from[next] = current
+
+        if end in came_from:
+            path = []
+            while end:
+                path.append(end)
+                end = came_from[end]
+            path.reverse()
+
+            if path:
+                next_step = path[1]  # the next step after the start
+                self.rect.x = next_step[0] * tile
+                self.rect.y = next_step[1] * tile
+
+    def get_neighbors(self, cell, grid_cells):
+        neighbors = []
+        x, y = cell
+        if x > 0 and not grid_cells[y][x].walls['left']:
+            neighbors.append((x-1, y))
+        if x < len(grid_cells[0]) - 1 and not grid_cells[y][x].walls['right']:
+            neighbors.append((x+1, y))
+        if y > 0 and not grid_cells[y][x].walls['top']:
+            neighbors.append((x, y-1))
+        if y < len(grid_cells) - 1 and not grid_cells[y][x].walls['bottom']:
+            neighbors.append((x, y+1))
+        return neighbors
+
+    def heuristic(self, a, b):
+        (x1, y1) = a
+        (x2, y2) = b
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def can_move(self, new_x, new_y, grid_cells, tile):
+        grid_x, grid_y = new_x // tile, new_y // tile
+        if grid_x < 0 or grid_x >= len(grid_cells[0]) or grid_y < 0 or grid_y >= len(grid_cells):
+            return False
+
+        cell = grid_cells[grid_y][grid_x]
+        if new_x > self.rect.x and cell.walls['left']:
+            return False
+        if new_x < self.rect.x and cell.walls['right']:
+            return False
+        if new_y > self.rect.y and cell.walls['top']:
+            return False
+        if new_y < self.rect.y and cell.walls['bottom']:
+            return False
+
+        return True
