@@ -1,5 +1,3 @@
-# main.py
-
 import pygame
 import sys
 import random
@@ -101,7 +99,6 @@ class MainMenu:
                         pygame.quit()
                         sys.exit()
         return None
-
 class MainGame:
     def __init__(self):
         self.goal_image = pygame.image.load('gate.jpeg')
@@ -112,9 +109,11 @@ class MainGame:
         pygame.display.set_caption("Maze Game")
         clock = pygame.time.Clock()
 
-        maze = Maze(size[0] // tile, (size[1] - 50) // tile, tile)
+        maze_top_offset = 50  # Space at the top for the clock
+        maze_height = size[1] - maze_top_offset
+        maze = Maze(size[0] // tile, maze_height // tile, tile)  # Adjust maze size to account for clock display
         maze.generate_maze()
-        
+
         goal = maze.grid[maze.cols - 1][maze.rows - 1]
         game = Game(goal, tile, goal_image=self.goal_image)
 
@@ -123,8 +122,13 @@ class MainGame:
         else:
             players = [Player(tile // 2, tile // 2), Player(tile // 2, tile // 2)]
 
-        players[0].rect.topleft = maze.get_start_position()
-        players[1].rect.topleft = maze.get_start_position()
+        # Adjust the starting position to be lower and more to the right
+        start_x, start_y = maze.get_start_position()
+        start_x += tile // 2  # Move right by half a tile
+        start_y += tile // 2  # Move down by half a tile
+
+        players[0].rect.topleft = (start_x, start_y)
+        players[1].rect.topleft = (start_x, start_y)
 
         game_clock = Clock(size[0], size[1])
 
@@ -155,7 +159,9 @@ class MainGame:
                     players[1].move(players[1].speed, 0, maze.grid, tile)
 
             screen.fill((0, 0, 0))
-            maze.draw(screen, offset_y=50)
+            game_clock.update()
+            game_clock.draw(screen)  # Draw the clock first
+            maze.draw(screen)
             game.draw(screen)
             for player in players:
                 player.draw(screen)
@@ -170,16 +176,13 @@ class MainGame:
                 print("Player 2 wins!")
                 running = False
 
-            game_clock.update()
-            game_clock.draw(screen)
-
             pygame.display.flip()
             clock.tick(60)
 
         pygame.quit()
 
 def main():
-    screen = pygame.display.set_mode((800, 800))
+    screen = pygame.display.set_mode((800, 850))  # Adjust the screen size to leave space for the clock
     menu = MainMenu(screen)
     while menu.running:
         for event in pygame.event.get():
@@ -191,13 +194,36 @@ def main():
                 if result:
                     main_game = MainGame()
                     if result == "1v1":
-                        main_game.run_game((800, 800), 40, vs_bot=False)
+                        main_game.run_game((800, 850), 40, vs_bot=False)  # Adjust the game size accordingly
                     else:
-                        main_game.run_game((800, 800), 40, vs_bot=True, bot_difficulty=result)
+                        main_game.run_game((800, 850), 40, vs_bot=True, bot_difficulty=result)
                     menu.running = True
 
         menu.draw()
         pygame.display.flip()
+
+
+def main():
+    screen = pygame.display.set_mode((800, 750))  # Adjust the screen size to leave space for the clock
+    menu = MainMenu(screen)
+    while menu.running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            else:
+                result = menu.handle_event(event)
+                if result:
+                    main_game = MainGame()
+                    if result == "1v1":
+                        main_game.run_game((800, 850), 40, vs_bot=False)  # Adjust the game size accordingly
+                    else:
+                        main_game.run_game((800, 850), 40, vs_bot=True, bot_difficulty=result)
+                    menu.running = True
+
+        menu.draw()
+        pygame.display.flip()
+
 
 if __name__ == "__main__":
     main()
